@@ -83,9 +83,35 @@ while True:
     results = hands.process(rgb_frame)
 
 
-    # =========================
-    # Hand Detected
-    # =========================
+    # ==================================================
+    # TITLE
+    # ==================================================
+
+    title = "HAND GESTURE VOLUME CONTROLLER"
+
+    title_size = cv2.getTextSize(
+        title,
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.9,
+        2
+    )[0]
+
+    title_x = (w - title_size[0]) // 2
+
+    cv2.putText(
+        frame,
+        title,
+        (title_x, 50),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.9,
+        (255, 255, 255),
+        2
+    )
+
+
+    # ==================================================
+    # HAND DETECTED
+    # ==================================================
 
     if results.multi_hand_landmarks:
 
@@ -147,7 +173,7 @@ while True:
             )
 
 
-            # Draw connecting line
+            # Connecting line
             cv2.line(
                 frame,
                 (thumb_x, thumb_y),
@@ -158,70 +184,130 @@ while True:
 
 
             # =========================
-            # Controller Activation
+            # Hand Status
             # =========================
 
-            # Controller is active when
-            # thumb and index are reasonably close
-
-            if distance <= 80:
-
-                status = "ACTIVE"
-
-                status_color = (0, 255, 0)
-
-
-                # Convert distance → volume
-                target_volume = np.interp(
-                    distance,
-                    [MIN_DISTANCE, MAX_DISTANCE],
-                    [0, 100]
-                )
-
-                target_volume = np.clip(
-                    target_volume,
-                    0,
-                    100
-                )
-
-
-                # Smooth volume
-                current_volume = (
-                    current_volume * 0.8
-                    +
-                    target_volume * 0.2
-                )
-
-
-                # Convert percentage → Pycaw
-                volume_level = np.interp(
-                    current_volume,
-                    [0, 100],
-                    [min_volume, max_volume]
-                )
-
-
-                # Set Windows volume
-                volume_control.SetMasterVolumeLevel(
-                    volume_level,
-                    None
-                )
-
-            else:
-
-                status = "INACTIVE"
-
-                status_color = (0, 0, 255)
+            status = "HAND DETECTED"
+            status_color = (0, 255, 0)
 
 
             # =========================
-            # Volume Bar
+            # Status Box
             # =========================
 
-            bar_x = 50
-            bar_y = 150
+            box_x = 25
+            box_y = 70
 
-            bar_width = 40
+            box_width = 415
+            box_height = 55
+
+            # Dark background
+            cv2.rectangle(
+                frame,
+                (box_x, box_y),
+                (
+                    box_x + box_width,
+                    box_y + box_height
+                ),
+                (70, 90, 70),
+                -1
+            )
+
+
+            # Green status circle
+            cv2.circle(
+                frame,
+                (box_x + 26, box_y + 28),
+                12,
+                status_color,
+                cv2.FILLED
+            )
+
+
+            # Status text
+            cv2.putText(
+                frame,
+                status,
+                (box_x + 55, box_y + 37),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.75,
+                status_color,
+                2
+            )
+
+
+            # =========================
+            # Convert Distance → Volume
+            # =========================
+
+            target_volume = np.interp(
+                distance,
+                [MIN_DISTANCE, MAX_DISTANCE],
+                [0, 100]
+            )
+
+            target_volume = np.clip(
+                target_volume,
+                0,
+                100
+            )
+
+
+            # =========================
+            # Smooth Volume
+            # =========================
+
+            current_volume = (
+                current_volume * 0.8
+                +
+                target_volume * 0.2
+            )
+
+
+            # =========================
+            # Convert Percentage → Pycaw
+            # =========================
+
+            volume_level = np.interp(
+                current_volume,
+                [0, 100],
+                [min_volume, max_volume]
+            )
+
+
+            # =========================
+            # Set Windows Volume
+            # =========================
+
+            volume_control.SetMasterVolumeLevel(
+                volume_level,
+                None
+            )
+
+
+            # ==================================================
+            # DISTANCE
+            # ==================================================
+
+            cv2.putText(
+                frame,
+                f"Distance: {int(distance)}",
+                (27, 155),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (255, 255, 255),
+                2
+            )
+
+
+            # ==================================================
+            # VOLUME BAR
+            # ==================================================
+
+            bar_x = 65
+            bar_y = 225
+
+            bar_width = 50
             bar_height = 400
 
 
@@ -245,7 +331,7 @@ while True:
             )
 
 
-            # Volume level
+            # Filled volume
             cv2.rectangle(
                 frame,
                 (
@@ -261,59 +347,14 @@ while True:
             )
 
 
-            # =========================
-            # Display Status
-            # =========================
-
-            cv2.putText(
-                frame,
-                f"STATUS: {status}",
-                (20, 50),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.9,
-                status_color,
-                2
-            )
-
-
-            # =========================
-            # Display Distance
-            # =========================
-
-            cv2.putText(
-                frame,
-                f"Distance: {int(distance)}",
-                (20, 90),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (255, 255, 255),
-                2
-            )
-
-
-            # =========================
-            # Display Volume
-            # =========================
+            # ==================================================
+            # VOLUME TEXT
+            # ==================================================
 
             cv2.putText(
                 frame,
                 f"Volume: {int(current_volume)}%",
-                (20, 590),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (255, 255, 255),
-                2
-            )
-
-
-            # =========================
-            # Display Title
-            # =========================
-
-            cv2.putText(
-                frame,
-                "HAND GESTURE VOLUME CONTROLLER",
-                (350, 50),
+                (25, 665),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.9,
                 (255, 255, 255),
@@ -321,23 +362,65 @@ while True:
             )
 
 
+    # ==================================================
+    # NO HAND DETECTED
+    # ==================================================
+
     else:
 
-        # No hand detected
+        status = "NO HAND DETECTED"
+        status_color = (0, 0, 255)
+
+
+        # =========================
+        # Status Box
+        # =========================
+
+        box_x = 25
+        box_y = 70
+
+        box_width = 415
+        box_height = 55
+
+
+        # Dark background
+        cv2.rectangle(
+            frame,
+            (box_x, box_y),
+            (
+                box_x + box_width,
+                box_y + box_height
+            ),
+            (80, 70, 70),
+            -1
+        )
+
+
+        # Red status circle
+        cv2.circle(
+            frame,
+            (box_x + 26, box_y + 28),
+            12,
+            status_color,
+            cv2.FILLED
+        )
+
+
+        # Status text
         cv2.putText(
             frame,
-            "NO HAND DETECTED",
-            (20, 50),
+            status,
+            (box_x + 55, box_y + 37),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.9,
-            (0, 0, 255),
+            0.75,
+            status_color,
             2
         )
 
 
-    # =========================
-    # Display Webcam
-    # =========================
+    # ==================================================
+    # DISPLAY WINDOW
+    # ==================================================
 
     cv2.imshow(
         "Hand Gesture Volume Controller",
@@ -345,9 +428,9 @@ while True:
     )
 
 
-    # =========================
-    # Quit
-    # =========================
+    # ==================================================
+    # QUIT
+    # ==================================================
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
@@ -358,4 +441,5 @@ while True:
 # =========================
 
 cap.release()
+
 cv2.destroyAllWindows()
